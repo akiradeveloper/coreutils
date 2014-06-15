@@ -28,6 +28,7 @@ PROGS       := \
   rm \
   rmdir \
   sleep \
+  split \
   seq \
   sum \
   tac \
