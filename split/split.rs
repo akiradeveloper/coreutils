@@ -28,6 +28,11 @@ fn main() { os::set_exit_status(uumain(os::args())); }
 
 pub fn uumain(args: Vec<String>) -> int {
 	let opts = [
+		getopts::optopt("a", "suffix-length", "use suffixes of length N (default 2)", "N"),
+		getopts::optopt("b", "bytes", "put SIZE bytes per output file", "SIZE"),
+		getopts::optopt("C", "line-bytes", "put at most SIZE bytes of lines per output file", "SIZE"),
+		getopts::optflag("d", "numeric-suffixes", "use numeric suffixes instead of alphabetic"),
+		getopts::optopt("l", "lines", "put NUMBER lines per output file", "NUMBER"),
 		getopts::optflag("", "verbose", "print a diagnostic just before each output file is opened"),
 		getopts::optflag("", "help", "display help and exit"),
 		getopts::optflag("", "version", "output version information and exit"),
@@ -52,6 +57,28 @@ pub fn uumain(args: Vec<String>) -> int {
 		println!("{} v{}", NAME, VERSION);
 		return 0;
 	}
+
+	let mut suffix_length = 0;
+	match matches.opt_str("a") {
+		Some(n) => {
+			match from_str(n.as_slice()) {
+				Some(m) => { suffix_length = m }
+				None => {}
+			}
+		}
+		None => {}
+	}
+
+	let mut t = "line";
+	let v1 = vec!["b", "C", "l"];
+	let mut v2 = v1.iter().map(|&x| matches.opt_str(x));
+	let n =  v2.filter(|ref x| x.is_none()).count();
+	if n > 1 {
+		crash!(1, "{}: cannot split in more than one way", NAME);
+	} else if n == 1 {
+		// let e = v2.clone().find(|ref x| !x.is_none()).unwrap();
+	}
+	println!("type is {}", t);
 
 	if matches.opt_present("verbose") {
 		// TODO
