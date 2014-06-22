@@ -58,17 +58,15 @@ pub fn uumain(args: Vec<String>) -> int {
 		return 0;
 	}
 
-	let mut suffix_length = 0;
-	match matches.opt_str("a") {
-		Some(n) => {
-			match from_str(n.as_slice()) {
-				Some(m) => { suffix_length = m }
-				None => {}
-			}
-		}
-		None => {}
-	}
+	let suffix_length = match matches.opt_str("a") {
+		Some(n) => match from_str(n.as_slice()) {
+				Some(m) => m,
+				None => crash!(1, "cannot parse num")
+		},
+		None => 2
+	};
 
+	// XXX
 	let v1 = vec!["b", "C", "l"];
 	let mut v2 = v1.iter().filter_map(|x| matches.opt_str(*x));
 	let strat = match (v2.next(), v2.next()) {
