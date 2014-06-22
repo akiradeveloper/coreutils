@@ -33,8 +33,8 @@ pub fn uumain(args: Vec<String>) -> int {
 		getopts::optopt("C", "line-bytes", "put at most SIZE bytes of lines per output file", "SIZE"),
 		getopts::optflag("d", "numeric-suffixes", "use numeric suffixes instead of alphabetic"),
 		getopts::optopt("l", "lines", "put NUMBER lines per output file", "NUMBER"),
-		getopts::optflag("", "verbose", "print a diagnostic just before each output file is opened"),
-		getopts::optflag("", "help", "display help and exit"),
+		getopts::optflag("V", "verbose", "print a diagnostic just before each output file is opened"),
+		getopts::optflag("h", "help", "display help and exit"),
 		getopts::optflag("", "version", "output version information and exit"),
 	];
 
@@ -43,7 +43,7 @@ pub fn uumain(args: Vec<String>) -> int {
 		Err(f) => crash!(1, "{}", f.to_err_msg())
 	};
 
-	if matches.opt_present("help") {
+	if matches.opt_present("h") {
 		println!("{} v{}", NAME, VERSION);
 		println!("");
 		println!("Usage:");
@@ -53,7 +53,7 @@ pub fn uumain(args: Vec<String>) -> int {
 		return 0;
 	}
 
-	if matches.opt_present("version") {
+	if matches.opt_present("V") {
 		println!("{} v{}", NAME, VERSION);
 		return 0;
 	}
