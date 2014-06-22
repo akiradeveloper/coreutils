@@ -70,15 +70,13 @@ pub fn uumain(args: Vec<String>) -> int {
 	}
 
 	let v1 = vec!["b", "C", "l"];
-	let mut v2 = v1.iter().map(|x| matches.opt_str(*x)).filter(|ref x| !x.is_none());
-	let n =  v2.count();
-	if n > 1 {
-		crash!(1, "{}: cannot split in more than one way", NAME);
-	} else if n == 1 {
-		let mut v3 = v1.iter().map(|x| matches.opt_str(*x)).filter(|ref x| !x.is_none());
-		let e = v3.find(|ref x| !x.is_none()).unwrap();
-		println!("{}", e);
-	}
+	let mut v2 = v1.iter().filter_map(|x| matches.opt_str(*x));
+	let strat = match (v2.next(), v2.next()) {
+		(Some(_), Some(_)) => crash!(1, "{}: cannot split in more than one way", NAME),
+		(Some(a), None) => a,
+		(None, _) => "b".to_string(),
+	};
+	println!("starategy:{}", strat);
 
 	if matches.opt_present("verbose") {
 		// TODO
