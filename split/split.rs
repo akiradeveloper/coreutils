@@ -69,16 +69,16 @@ pub fn uumain(args: Vec<String>) -> int {
 		None => {}
 	}
 
-	let mut t = "line";
 	let v1 = vec!["b", "C", "l"];
-	let mut v2 = v1.iter().map(|&x| matches.opt_str(x));
-	let n =  v2.filter(|ref x| x.is_none()).count();
+	let mut v2 = v1.iter().map(|x| matches.opt_str(*x)).filter(|ref x| !x.is_none());
+	let n =  v2.count();
 	if n > 1 {
 		crash!(1, "{}: cannot split in more than one way", NAME);
 	} else if n == 1 {
-		// let e = v2.clone().find(|ref x| !x.is_none()).unwrap();
+		let mut v3 = v1.iter().map(|x| matches.opt_str(*x)).filter(|ref x| !x.is_none());
+		let e = v3.find(|ref x| !x.is_none()).unwrap();
+		println!("{}", e);
 	}
-	println!("type is {}", t);
 
 	if matches.opt_present("verbose") {
 		// TODO
