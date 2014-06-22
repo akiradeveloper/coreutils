@@ -82,5 +82,13 @@ pub fn uumain(args: Vec<String>) -> int {
 		// TODO
 	}
 
+	let mut v = matches.free.iter();
+	let (input, prefix) = match (v.next(), v.next()) {
+		(Some(a), None) => (a.as_slice(), "x"),
+		(Some(a), Some(b)) => (a.as_slice(), b.as_slice()),
+		(None, _) => ("-", "x"),
+	};
+	println!("input:{}, prefix:{}", input, prefix);
+
 	0
 }
