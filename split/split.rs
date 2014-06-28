@@ -57,6 +57,8 @@ pub fn uumain(args: Vec<String>) -> int {
 		println!("{} v{}", NAME, VERSION);
 		return 0;
 	}
+	
+	let numeric_suffix = if matches.opt_present("d") { true } else { false };
 
 	let suffix_length :int = match matches.opt_str("a") {
 		Some(n) => match from_str(n.as_slice()) {
@@ -103,7 +105,7 @@ pub fn uumain(args: Vec<String>) -> int {
 		let path = Path::new(input);
 		let reader = match File::open(&path) {
 			Ok(a) => a,
-			Err(e) => crash!(1, "{}: cannot open '{}' for reading: No such file or directory", NAME, input)
+			Err(e) => crash!(1, "cannot open '{}' for reading: No such file or directory", input)
 		};
 		BufferedReader::new(reader);
 	};
