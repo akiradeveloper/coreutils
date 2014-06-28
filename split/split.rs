@@ -58,7 +58,7 @@ pub fn uumain(args: Vec<String>) -> int {
 		return 0;
 	}
 
-	let suffix_length = match matches.opt_str("a") {
+	let suffix_length :int = match matches.opt_str("a") {
 		Some(n) => match from_str(n.as_slice()) {
 				Some(m) => m,
 				None => crash!(1, "cannot parse num")
@@ -66,19 +66,28 @@ pub fn uumain(args: Vec<String>) -> int {
 		None => 2
 	};
 
-	// XXX
-	let v1 = vec!["b", "C", "l"];
-	let mut v2 = v1.iter().filter_map(|x| matches.opt_str(*x));
-	let strat = match (v2.next(), v2.next()) {
-		(Some(_), Some(_)) => crash!(1, "{}: cannot split in more than one way", NAME),
-		(Some(a), None) => a,
-		(None, _) => "b".to_string(),
-	};
-	println!("starategy:{}", strat);
-
+	let mut verbose = false;
 	if matches.opt_present("verbose") {
-		// TODO
+		verbose = true
 	}
+
+	let strategies = vec!["b", "C", "l"];
+	let mut strat = "b";
+	let mut param = "1000".to_string();
+	for e in strategies.iter() {
+		match matches.opt_str(*e) {
+			Some(a) => {
+				if strat == "l" {
+					strat = *e;
+					param = a;
+				} else {
+					crash!(1, "{}: cannot split in more than one way", NAME)
+				}
+			},
+			None => {}
+		}
+	}
+	println!("strat:{}, param:{}", strat, param);
 
 	let mut v = matches.free.iter();
 	let (input, prefix) = match (v.next(), v.next()) {
