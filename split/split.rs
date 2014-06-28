@@ -15,7 +15,7 @@ extern crate getopts;
 extern crate libc;
 
 use std::os;
-use std::io::print;
+use std::io::{print, stdin, File, BufferedReader};
 
 #[path = "../common/util.rs"]
 mod util;
@@ -96,6 +96,17 @@ pub fn uumain(args: Vec<String>) -> int {
 		(None, _) => ("-", "x"),
 	};
 	println!("input:{}, prefix:{}", input, prefix);
+
+	let mut buffer = if input == "-" { 
+		BufferedReader::new(stdin());
+	} else { 
+		let path = Path::new(input);
+		let reader = match File::open(&path) {
+			Ok(a) => a,
+			Err(e) => crash!(1, "{}: cannot open '{}' for reading: No such file or directory", NAME, input)
+		};
+		BufferedReader::new(reader);
+	};
 
 	0
 }
