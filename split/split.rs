@@ -67,9 +67,9 @@ pub fn uumain(args: Vec<String>) -> int {
 		getopts::optopt("C", "line-bytes", "put at most SIZE bytes of lines per output file", "SIZE"),
 		getopts::optflag("d", "numeric-suffixes", "use numeric suffixes instead of alphabetic"),
 		getopts::optopt("l", "lines", "put NUMBER lines per output file", "NUMBER"),
-		getopts::optflag("V", "verbose", "print a diagnostic just before each output file is opened"),
+		getopts::optflag("", "verbose", "print a diagnostic just before each output file is opened"),
 		getopts::optflag("h", "help", "display help and exit"),
-		getopts::optflag("", "version", "output version information and exit"),
+		getopts::optflag("V", "version", "output version information and exit"),
 	];
 
 	let matches = match getopts::getopts(args.tail(), opts) {
