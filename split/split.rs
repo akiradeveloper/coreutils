@@ -25,6 +25,53 @@ mod util;
 static NAME: &'static str = "split";
 static VERSION: &'static str = "1.0.0";
 
+struct Settings {
+	prefix: String,
+	numeric_suffix: bool,
+	suffix_length: uint,
+	input: String,
+	strategy: String,
+	strategy_param: String,
+	verbose: bool
+}
+
+struct SplitControl {
+	current_lineno: uint,
+	current_line: String,
+}
+
+trait Splitter {
+	fn new(&Settings) -> Self;
+	fn consume(&mut self, &mut SplitControl) -> String;
+}
+
+struct LineSplitter {
+	lines_to_write: uint,
+}
+
+impl Splitter for LineSplitter {
+	fn new(settings: &Settings) -> LineSplitter {
+		let n = match from_str(settings.strategy_param.as_slice()) {
+			Some(a) => a,
+			_ => crash!(1, "invalid number of lines")
+		};
+		LineSplitter {
+			lines_to_write: n,
+		}
+	}
+
+	fn consume(&mut self, control: &mut SplitControl) -> String {
+		self.lines_to_write -= 1;
+		control.current_line.clone()
+	}
+}
+//
+// struct ByteSplitter {
+// }
+//
+// struct LineByteSplitter {
+// }
+
 // (1, 3) -> "aab"
 fn str_prefix(i: uint, width: uint) -> String {
 	let mut c = "".to_string();
@@ -91,10 +138,21 @@ pub fn uumain(args: Vec<String>) -> int {
 		println!("{} v{}", NAME, VERSION);
 		return 0;
 	}
-	
-	let numeric_suffix = if matches.opt_present("d") { true } else { false };
 
-	let suffix_length :int = match matches.opt_str("a") {
+	// consume args
+
+	let mut settings = Settings {
+		prefix: "".to_string(),
+		numeric_suffix: false,
+		suffix_length: 0,
+		input: "".to_string(),
+		strategy: "".to_string(),
+		strategy_param: "".to_string(),
+		verbose: false,
+	};
+	settings.numeric_suffix = if matches.opt_present("d") { true } else { false };
+
+	settings.suffix_length = match matches.opt_str("a") {
 		Some(n) => match from_str(n.as_slice()) {
 				Some(m) => m,
 				None => crash!(1, "cannot parse num")
@@ -102,20 +160,17 @@ pub fn uumain(args: Vec<String>) -> int {
 		None => 2
 	};
 
-	let mut verbose = false;
-	if matches.opt_present("verbose") {
-		verbose = true
-	}
+	settings.verbose = if matches.opt_present("verbose") { true } else { false };
 
+	settings.strategy = "b".to_string();
+	settings.strategy_param = "1000".to_string();
 	let strategies = vec!["b", "C", "l"];
-	let mut strat = "b";
-	let mut param = "1000".to_string();
 	for e in strategies.iter() {
 		match matches.opt_str(*e) {
 			Some(a) => {
-				if strat == "l" {
-					strat = *e;
-					param = a;
+				if settings.strategy.as_slice() == "l" {
+					settings.strategy = e.to_string();
+					settings.strategy_param = a;
 				} else {
 					crash!(1, "{}: cannot split in more than one way", NAME)
 				}
@@ -123,30 +178,29 @@ pub fn uumain(args: Vec<String>) -> int {
 			None => {}
 		}
 	}
-	println!("strat:{}, param:{}", strat, param);
 
 	let mut v = matches.free.iter();
 	let (input, prefix) = match (v.next(), v.next()) {
-		(Some(a), None) => (a.as_slice(), "x"),
-		(Some(a), Some(b)) => (a.as_slice(), b.as_slice()),
-		(None, _) => ("-", "x"),
+		(Some(a), None) => (a.to_string(), "x".to_string()),
+		(Some(a), Some(b)) => (a.to_string(), b.to_string()),
+		(None, _) => ("-".to_string(), "x".to_string()),
 	};
-	println!("input:{}, prefix:{}", input, prefix);
+	settings.input = input;
+	settings.prefix = prefix;
 
-	let mut buffer = if input == "-" { 
+	let mut buffer = if settings.input.as_slice() == "-" { 
 		BufferedReader::new(stdin());
 	} else { 
-		let path = Path::new(input);
+		let path = Path::new(settings.input.as_slice());
 		let reader = match File::open(&path) {
 			Ok(a) => a,
-			Err(e) => crash!(1, "cannot open '{}' for reading: No such file or directory", input)
+			Err(e) => crash!(1, "cannot open '{}' for reading: No such file or directory", settings.input)
 		};
 		BufferedReader::new(reader);
 	};
 
 	// println!("{}", num_prefix(128, 4));
 	// println!("{}", str_prefix(1, 5));
-	
 
 	// XXX attempt write
 	// let mut splitter = LineSplitter::new(options); 
@@ -171,8 +225,10 @@ pub fn uumain(args: Vec<String>) -> int {
 	// 	}
         //
 	// 	let consumed = splitter.consume();
-	// 	writer.write(consumed.as_slice());
-	// 	advance(splitter.current_line, consumed.as_slice().char_len());
+	// 	writer.write_str(consumed.as_slice());
+        //
+	// 	let advance = consumed.as_slice().char_len();
+	// 	// advance current_line as slice
 	// }
 
 	0
