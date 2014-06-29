@@ -146,6 +146,34 @@ pub fn uumain(args: Vec<String>) -> int {
 
 	// println!("{}", num_prefix(128, 4));
 	// println!("{}", str_prefix(1, 5));
+	
+
+	// XXX attempt write
+	// let mut splitter = LineSplitter::new(options); 
+	// let mut fileno = 0;
+	// while splitter.current_lineno <  spliter.no_lines {
+	// 	if splitter.current_line.char_len() == 0 {
+	// 		splitter.current_line = ; // slice
+	// 	}
+        //
+	// 	if splitter.request_new_file {
+	// 		writer.flush();
+        //
+	// 		let mut filename = options.prefix.to_string();
+	// 		filename.push_str(if options.numeric_suffix {
+	// 			num_prefix(fileno, options.suffix_length);
+	// 		} else {
+	// 			str_prefix(fileno, options.suffix_length);	
+	// 		}.as_slice());
+        //
+	// 		fileno += 1;
+	// 		writer = ;
+	// 	}
+        //
+	// 	let consumed = splitter.consume();
+	// 	writer.write(consumed.as_slice());
+	// 	advance(splitter.current_line, consumed.as_slice().char_len());
+	// }
 
 	0
 }
