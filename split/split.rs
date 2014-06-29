@@ -16,12 +16,46 @@ extern crate libc;
 
 use std::os;
 use std::io::{print, stdin, File, BufferedReader};
+use std::num;
+use std::char;
 
 #[path = "../common/util.rs"]
 mod util;
 
 static NAME: &'static str = "split";
 static VERSION: &'static str = "1.0.0";
+
+// (1, 3) -> "aab"
+fn str_prefix(i: uint, width: uint) -> String {
+	let mut c = "".to_string();
+
+	let mut n = i;
+	let mut w = width;
+	while w > 0 {
+		w -= 1;
+		let div = num::pow(26 as uint, w);
+		let r = n / div;
+		n -= r * div;
+		c.push_char(char::from_u32((r as u32) + 97).unwrap());
+	}
+	c
+}
+
+// (1, 3) -> "001"
+fn num_prefix(i: uint, width: uint) -> String {
+	let mut c = "".to_string();
+
+	let mut n = i;
+	let mut w = width;
+	while w > 0 {
+		w -= 1;
+		let div = num::pow(10 as uint, w);
+		let r = n / div;
+		n -= r * div;
+		c.push_char(char::from_digit(r, 10).unwrap());
+	}
+	c
+}
 
 #[allow(dead_code)]
 fn main() { os::set_exit_status(uumain(os::args())); }
@@ -109,6 +143,9 @@ pub fn uumain(args: Vec<String>) -> int {
 		};
 		BufferedReader::new(reader);
 	};
+
+	// println!("{}", num_prefix(128, 4));
+	// println!("{}", str_prefix(1, 5));
 
 	0
 }
