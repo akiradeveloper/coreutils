@@ -15,7 +15,8 @@ extern crate getopts;
 extern crate libc;
 
 use std::os;
-use std::io::{print, stdin, File, BufferedReader};
+use std::io;
+use std::io::{print, stdin, File, BufferedReader, BufferedWriter};
 use std::num;
 use std::char;
 
@@ -74,7 +75,6 @@ impl Splitter for LineSplitter {
 // (1, 3) -> "aab"
 fn str_prefix(i: uint, width: uint) -> String {
 	let mut c = "".to_string();
-
 	let mut n = i;
 	let mut w = width;
 	while w > 0 {
@@ -90,7 +90,6 @@ fn str_prefix(i: uint, width: uint) -> String {
 // (1, 3) -> "001"
 fn num_prefix(i: uint, width: uint) -> String {
 	let mut c = "".to_string();
-
 	let mut n = i;
 	let mut w = width;
 	while w > 0 {
@@ -189,48 +188,60 @@ pub fn uumain(args: Vec<String>) -> int {
 	
 	// END consume
 
-	let mut buffer = if settings.input.as_slice() == "-" { 
-		BufferedReader::new(stdin());
-	} else { 
-		let path = Path::new(settings.input.as_slice());
-		let reader = match File::open(&path) {
-			Ok(a) => a,
-			Err(e) => crash!(1, "cannot open '{}' for reading: No such file or directory", settings.input)
-		};
-		BufferedReader::new(reader);
-	};
+	let mut reader = BufferedReader::new(
+		if settings.input.as_slice() == "-" {
+			// box io::stdio::stdin_raw() as Box<Reader>
+			box io::stdin() as Box<Reader>
+		} else {
+			// box crash_if_err!(1, io::File::open(&Path::new(settings.input.clone()))) as Box<Reader>
+			box match File::open(&Path::new(settings.input.clone())) {
+				Ok(a) => a,
+				Err(_) => crash!(1, "cannot open '{}' for reading: No such file or directory", settings.input)
+			} as Box<Reader>
+		}
+	);
+
+	// let num_lines;
 
 	// println!("{}", num_prefix(128, 4));
 	// println!("{}", str_prefix(1, 5));
 
-	// XXX attempt write
-	// let mut splitter = LineSplitter::new(&settings); 
-	// let mut fileno = 0;
-	// while splitter.current_lineno <  spliter.no_lines {
-	// 	if splitter.current_line.char_len() == 0 {
-	// 		splitter.current_line = ; // slice
-	// 	}
-        //
-	// 	if splitter.request_new_file {
-	// 		writer.flush();
-        //
-	// 		let mut filename = options.prefix.to_string();
-	// 		filename.push_str(if options.numeric_suffix {
-	// 			num_prefix(fileno, options.suffix_length);
-	// 		} else {
-	// 			str_prefix(fileno, options.suffix_length);	
-	// 		}.as_slice());
-        //
-	// 		fileno += 1;
-	// 		writer = ;
-	// 	}
-        //
-	// 	let consumed = splitter.consume();
-	// 	writer.write_str(consumed.as_slice());
-        //
-	// 	let advance = consumed.as_slice().char_len();
-	// 	// advance current_line as slice
-	// }
+	let mut splitter:LineSplitter = Splitter::new(&settings); 
+	let mut control = SplitControl {
+		current_lineno: 0,
+		current_line: "".to_string(),
+		request_new_file: true,
+	};
+
+	let mut fileno = 0;
+	loop {
+		if control.current_line.as_slice().char_len() == 0 {
+			match reader.read_line() {
+				Ok(a) => { control.current_line = a; }
+				Err(_) =>  { break; }
+			}
+		}
+		
+		// if splitter.request_new_file {
+		// 	writer.flush();
+                //
+		// 	let mut filename = options.prefix.to_string();
+		// 	filename.push_str(if options.numeric_suffix {
+		// 		num_prefix(fileno, options.suffix_length);
+		// 	} else {
+		// 		str_prefix(fileno, options.suffix_length);	
+		// 	}.as_slice());
+                //
+		// 	fileno += 1;
+		// 	writer = ;
+		// }
+                //
+		// let consumed = splitter.consume();
+		// writer.write_str(consumed.as_slice());
+                //
+		// let advance = consumed.as_slice().char_len();
+		// advance current_line as slice
+	}
 
 	0
 }
