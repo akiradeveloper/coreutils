@@ -32,16 +32,20 @@ struct Settings {
 	input: String,
 	strategy: String,
 	strategy_param: String,
-	verbose: bool
+	verbose: bool,
 }
 
 struct SplitControl {
-	current_lineno: uint,
-	current_line: String,
+	current_lineno: uint, // Don't touch
+	current_line: String, // Don't touch
+	request_new_file: bool,
 }
 
+// TODO ByteSplitter(-b), LineByteSplitter(-C)
 trait Splitter {
 	fn new(&Settings) -> Self;
+
+	// Consume the current_line and return the consumed string
 	fn consume(&mut self, &mut SplitControl) -> String;
 }
 
@@ -62,15 +66,10 @@ impl Splitter for LineSplitter {
 
 	fn consume(&mut self, control: &mut SplitControl) -> String {
 		self.lines_to_write -= 1;
+		control.request_new_file = true;
 		control.current_line.clone()
 	}
 }
-//
-// struct ByteSplitter {
-// }
-//
-// struct LineByteSplitter {
-// }
 
 // (1, 3) -> "aab"
 fn str_prefix(i: uint, width: uint) -> String {
@@ -139,7 +138,7 @@ pub fn uumain(args: Vec<String>) -> int {
 		return 0;
 	}
 
-	// consume args
+	// START consume args
 
 	let mut settings = Settings {
 		prefix: "".to_string(),
@@ -187,6 +186,8 @@ pub fn uumain(args: Vec<String>) -> int {
 	};
 	settings.input = input;
 	settings.prefix = prefix;
+	
+	// END consume
 
 	let mut buffer = if settings.input.as_slice() == "-" { 
 		BufferedReader::new(stdin());
@@ -203,7 +204,7 @@ pub fn uumain(args: Vec<String>) -> int {
 	// println!("{}", str_prefix(1, 5));
 
 	// XXX attempt write
-	// let mut splitter = LineSplitter::new(options); 
+	// let mut splitter = LineSplitter::new(&settings); 
 	// let mut fileno = 0;
 	// while splitter.current_lineno <  spliter.no_lines {
 	// 	if splitter.current_line.char_len() == 0 {
