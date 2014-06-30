@@ -244,7 +244,6 @@ pub fn uumain(args: Vec<String>) -> int {
 		let sl = clone.as_slice();
 		control.current_line = sl.slice(advance, sl.char_len()).to_string();
 		println!("consumed:{}, advance:{}, current_line:{}", consumed, advance, control.current_line);
-		break;
 	}
 
 	0
