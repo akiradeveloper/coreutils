@@ -187,8 +187,8 @@ pub fn uumain(args: Vec<String>) -> int {
 	settings.input = input;
 	settings.prefix = prefix;
 	
-	println!("{}", num_prefix(128, 4));
-	println!("{}", str_prefix(1, 5));
+	// println!("{}", num_prefix(128, 4));
+	// println!("{}", str_prefix(1, 5));
 	
 	// END consume
 
@@ -214,30 +214,31 @@ pub fn uumain(args: Vec<String>) -> int {
 		request_new_file: true,
 	};
 
+	let mut writer = BufferedWriter::new(box io::stdout() as Box<Writer>);
 	let mut fileno = 0;
 	loop {
-		println!("loop");
 		if control.current_line.as_slice().char_len() == 0 {
 			match reader.read_line() {
 				Ok(a) => { control.current_line = a; }
 				Err(_) =>  { break; }
 			}
 		}
+		println!("current line:{}", control.current_line);
 		
-		// if splitter.request_new_file {
-		// 	writer.flush();
-                //
-		// 	let mut filename = options.prefix.to_string();
-		// 	filename.push_str(if options.numeric_suffix {
-		// 		num_prefix(fileno, options.suffix_length);
-		// 	} else {
-		// 		str_prefix(fileno, options.suffix_length);	
-		// 	}.as_slice());
-                //
-		// 	fileno += 1;
-		// 	writer = ;
-		// }
-                //
+		if control.request_new_file {
+			let mut filename = settings.prefix.to_string();
+			filename.push_str(if settings.numeric_suffix {
+				num_prefix(fileno, settings.suffix_length)
+			} else {
+				str_prefix(fileno, settings.suffix_length)
+			}.as_slice());
+
+			if fileno != 0 { writer.flush(); }
+			fileno += 1;
+			writer = BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
+		}
+		break;
+		
 		// let consumed = splitter.consume();
 		// writer.write_str(consumed.as_slice());
                 //
