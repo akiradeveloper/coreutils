@@ -37,7 +37,6 @@ struct Settings {
 }
 
 struct SplitControl {
-	current_lineno: uint, // Don't touch
 	current_line: String, // Don't touch
 	request_new_file: bool,
 }
@@ -209,7 +208,6 @@ pub fn uumain(args: Vec<String>) -> int {
 
 	let mut splitter:LineSplitter = Splitter::new(&settings); 
 	let mut control = SplitControl {
-		current_lineno: 0,
 		current_line: "".to_string(),
 		request_new_file: true,
 	};
@@ -237,13 +235,16 @@ pub fn uumain(args: Vec<String>) -> int {
 			fileno += 1;
 			writer = BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
 		}
-		break;
+
+		let consumed = splitter.consume(&mut control);
+		writer.write_str(consumed.as_slice());
 		
-		// let consumed = splitter.consume();
-		// writer.write_str(consumed.as_slice());
-                //
-		// let advance = consumed.as_slice().char_len();
-		// advance current_line as slice
+		let advance = consumed.as_slice().char_len();
+		let clone = control.current_line.clone();
+		let sl = clone.as_slice();
+		control.current_line = sl.slice(advance, sl.char_len()).to_string();
+		println!("consumed:{}, advance:{}, current_line:{}", consumed, advance, control.current_line);
+		break;
 	}
 
 	0
