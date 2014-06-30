@@ -38,7 +38,7 @@ struct Settings {
 
 struct SplitControl {
 	current_line: String, // Don't touch
-	request_new_file: bool,
+	request_new_file: bool, // Splitter implementation requests new file
 }
 
 // TODO ByteSplitter(-b), LineByteSplitter(-C)
@@ -50,6 +50,7 @@ trait Splitter {
 }
 
 struct LineSplitter {
+	saved_lines_to_write: uint,
 	lines_to_write: uint,
 }
 
@@ -60,13 +61,18 @@ impl Splitter for LineSplitter {
 			_ => crash!(1, "invalid number of lines")
 		};
 		LineSplitter {
+			saved_lines_to_write: n,
 			lines_to_write: n,
 		}
 	}
 
 	fn consume(&mut self, control: &mut SplitControl) -> String {
+		println!("{}", self.lines_to_write);
 		self.lines_to_write -= 1;
-		control.request_new_file = true;
+		if self.lines_to_write == 0 {
+			control.request_new_file = true;
+			self.lines_to_write = self.saved_lines_to_write;
+		}
 		control.current_line.clone()
 	}
 }
@@ -231,13 +237,16 @@ pub fn uumain(args: Vec<String>) -> int {
 				str_prefix(fileno, settings.suffix_length)
 			}.as_slice());
 
-			if fileno != 0 { writer.flush(); }
+			if fileno != 0 {
+				writer.flush(); // TODO Use return value
+			}
 			fileno += 1;
 			writer = BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
+			control.request_new_file = false;
 		}
 
 		let consumed = splitter.consume(&mut control);
-		writer.write_str(consumed.as_slice());
+		writer.write_str(consumed.as_slice()); // TODO Use return value
 		
 		let advance = consumed.as_slice().char_len();
 		let clone = control.current_line.clone();
