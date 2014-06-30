@@ -160,7 +160,7 @@ pub fn uumain(args: Vec<String>) -> int {
 
 	settings.verbose = if matches.opt_present("verbose") { true } else { false };
 
-	settings.strategy = "b".to_string();
+	settings.strategy = "l".to_string();
 	settings.strategy_param = "1000".to_string();
 	let strategies = vec!["b", "C", "l"];
 	for e in strategies.iter() {
@@ -170,6 +170,7 @@ pub fn uumain(args: Vec<String>) -> int {
 					settings.strategy = e.to_string();
 					settings.strategy_param = a;
 				} else {
+					println!("{}", *e);
 					crash!(1, "{}: cannot split in more than one way", NAME)
 				}
 			},
@@ -185,6 +186,9 @@ pub fn uumain(args: Vec<String>) -> int {
 	};
 	settings.input = input;
 	settings.prefix = prefix;
+	
+	println!("{}", num_prefix(128, 4));
+	println!("{}", str_prefix(1, 5));
 	
 	// END consume
 
@@ -203,9 +207,6 @@ pub fn uumain(args: Vec<String>) -> int {
 
 	// let num_lines;
 
-	// println!("{}", num_prefix(128, 4));
-	// println!("{}", str_prefix(1, 5));
-
 	let mut splitter:LineSplitter = Splitter::new(&settings); 
 	let mut control = SplitControl {
 		current_lineno: 0,
@@ -215,6 +216,7 @@ pub fn uumain(args: Vec<String>) -> int {
 
 	let mut fileno = 0;
 	loop {
+		println!("loop");
 		if control.current_line.as_slice().char_len() == 0 {
 			match reader.read_line() {
 				Ok(a) => { control.current_line = a; }
