@@ -16,7 +16,6 @@ extern crate libc;
 
 use std::os;
 use std::io;
-use std::io::{print, stdin, File, BufferedReader, BufferedWriter};
 use std::num;
 use std::char;
 
@@ -42,6 +41,7 @@ struct SplitControl {
 }
 
 trait Splitter {
+    // Factory pattern
     fn new(_hint: Option<Self>, &Settings) -> Box<Splitter>;
 
     // Consume the current_line and return the consumed string
@@ -135,20 +135,17 @@ fn num_prefix(i: uint, width: uint) -> String {
 }
 
 fn split(settings: &Settings) -> int {
-    let mut reader = BufferedReader::new(
+    let mut reader = io::BufferedReader::new(
         if settings.input.as_slice() == "-" {
-            // box io::stdio::stdin_raw() as Box<Reader>
             box io::stdin() as Box<Reader>
         } else {
-            // box crash_if_err!(1, io::File::open(&Path::new(settings.input.clone()))) as Box<Reader>
-            box match File::open(&Path::new(settings.input.clone())) {
+            box match io::File::open(&Path::new(settings.input.clone())) {
                 Ok(a) => a,
                 Err(_) => crash!(1, "cannot open '{}' for reading: No such file or directory", settings.input)
             } as Box<Reader>
         }
     );
 
-    // Factory pattern
     let mut splitter: Box<Splitter> =
         match settings.strategy.as_slice() {
             "l" => Splitter::new(None::<LineSplitter>, settings),
@@ -157,11 +154,11 @@ fn split(settings: &Settings) -> int {
         };
 
     let mut control = SplitControl {
-        current_line: "".to_string(),
-        request_new_file: true,
+        current_line: "".to_string(), // Request new line
+        request_new_file: true, // Request new file
     };
 
-    let mut writer = BufferedWriter::new(box io::stdout() as Box<Writer>);
+    let mut writer = io::BufferedWriter::new(box io::stdout() as Box<Writer>);
     let mut fileno = 0;
     loop {
         if control.current_line.as_slice().char_len() == 0 {
@@ -170,7 +167,6 @@ fn split(settings: &Settings) -> int {
                 Err(_) =>  { break; }
             }
         }
-        println!("current line:{}", control.current_line);
         
         if control.request_new_file {
             let mut filename = settings.prefix.to_string();
@@ -184,7 +180,7 @@ fn split(settings: &Settings) -> int {
                 crash_if_err!(1, writer.flush());
             }
             fileno += 1;
-            writer = BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
+            writer = io::BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
             control.request_new_file = false;
         }
 
@@ -195,7 +191,6 @@ fn split(settings: &Settings) -> int {
         let clone = control.current_line.clone();
         let sl = clone.as_slice();
         control.current_line = sl.slice(advance, sl.char_len()).to_string();
-        println!("consumed:{}, advance:{}, current_line:{}", consumed, advance, control.current_line);
     }
     0
 }
@@ -226,7 +221,7 @@ pub fn uumain(args: Vec<String>) -> int {
         println!("Usage:");
         println!("  {0:s} [OPTION]... [INPUT [PREFIX]]", NAME);
         println!("");
-        print(getopts::usage("Output fixed-size pieces of INPUT to PREFIXaa, PREFIX ab, ...; default size is 1000, and default PREFIX is 'x'. With no INPUT, or when INPUT is -, read standard input." , opts).as_slice());
+        io::print(getopts::usage("Output fixed-size pieces of INPUT to PREFIXaa, PREFIX ab, ...; default size is 1000, and default PREFIX is 'x'. With no INPUT, or when INPUT is -, read standard input." , opts).as_slice());
         return 0;
     }
 
@@ -267,7 +262,6 @@ pub fn uumain(args: Vec<String>) -> int {
                     settings.strategy = e.to_string();
                     settings.strategy_param = a;
                 } else {
-                    println!("{}", *e);
                     crash!(1, "{}: cannot split in more than one way", NAME)
                 }
             },
