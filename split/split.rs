@@ -107,96 +107,7 @@ fn num_prefix(i: uint, width: uint) -> String {
     c
 }
 
-#[allow(dead_code)]
-fn main() { os::set_exit_status(uumain(os::args())); }
-
-pub fn uumain(args: Vec<String>) -> int {
-    let opts = [
-        getopts::optopt("a", "suffix-length", "use suffixes of length N (default 2)", "N"),
-        getopts::optopt("b", "bytes", "put SIZE bytes per output file", "SIZE"),
-        getopts::optopt("C", "line-bytes", "put at most SIZE bytes of lines per output file", "SIZE"),
-        getopts::optflag("d", "numeric-suffixes", "use numeric suffixes instead of alphabetic"),
-        getopts::optopt("l", "lines", "put NUMBER lines per output file", "NUMBER"),
-        getopts::optflag("", "verbose", "print a diagnostic just before each output file is opened"),
-        getopts::optflag("h", "help", "display help and exit"),
-        getopts::optflag("V", "version", "output version information and exit"),
-    ];
-
-    let matches = match getopts::getopts(args.tail(), opts) {
-        Ok(m) => m,
-        Err(f) => crash!(1, "{}", f)
-    };
-
-    if matches.opt_present("h") {
-        println!("{} v{}", NAME, VERSION);
-        println!("");
-        println!("Usage:");
-        println!("  {0:s} [OPTION]... [INPUT [PREFIX]]", NAME);
-        println!("");
-        print(getopts::usage("Output fixed-size pieces of INPUT to PREFIXaa, PREFIX ab, ...; default size is 1000, and default PREFIX is 'x'. With no INPUT, or when INPUT is -, read standard input." , opts).as_slice());
-        return 0;
-    }
-
-    if matches.opt_present("V") {
-        println!("{} v{}", NAME, VERSION);
-        return 0;
-    }
-
-    // START consume args
-
-    let mut settings = Settings {
-        prefix: "".to_string(),
-        numeric_suffix: false,
-        suffix_length: 0,
-        input: "".to_string(),
-        strategy: "".to_string(),
-        strategy_param: "".to_string(),
-        verbose: false,
-    };
-    settings.numeric_suffix = if matches.opt_present("d") { true } else { false };
-
-    settings.suffix_length = match matches.opt_str("a") {
-        Some(n) => match from_str(n.as_slice()) {
-            Some(m) => m,
-            None => crash!(1, "cannot parse num")
-        },
-        None => 2
-    };
-
-    settings.verbose = if matches.opt_present("verbose") { true } else { false };
-
-    settings.strategy = "l".to_string();
-    settings.strategy_param = "1000".to_string();
-    let strategies = vec!["b", "C", "l"];
-    for e in strategies.iter() {
-        match matches.opt_str(*e) {
-            Some(a) => {
-                if settings.strategy.as_slice() == "l" {
-                    settings.strategy = e.to_string();
-                    settings.strategy_param = a;
-                } else {
-                    println!("{}", *e);
-                    crash!(1, "{}: cannot split in more than one way", NAME)
-                }
-            },
-            None => {}
-        }
-    }
-
-    let mut v = matches.free.iter();
-    let (input, prefix) = match (v.next(), v.next()) {
-        (Some(a), None) => (a.to_string(), "x".to_string()),
-        (Some(a), Some(b)) => (a.to_string(), b.to_string()),
-        (None, _) => ("-".to_string(), "x".to_string()),
-    };
-    settings.input = input;
-    settings.prefix = prefix;
-    
-    // println!("{}", num_prefix(128, 4));
-    // println!("{}", str_prefix(1, 5));
-    
-    // END consume
-
+fn split(settings: &Settings) -> int {
     let mut reader = BufferedReader::new(
         if settings.input.as_slice() == "-" {
             // box io::stdio::stdin_raw() as Box<Reader>
@@ -210,7 +121,7 @@ pub fn uumain(args: Vec<String>) -> int {
         }
     );
 
-    let mut splitter:LineSplitter = Splitter::new(&settings); 
+    let mut splitter:LineSplitter = Splitter::new(settings); 
     let mut control = SplitControl {
         current_line: "".to_string(),
         request_new_file: true,
@@ -252,6 +163,92 @@ pub fn uumain(args: Vec<String>) -> int {
         control.current_line = sl.slice(advance, sl.char_len()).to_string();
         println!("consumed:{}, advance:{}, current_line:{}", consumed, advance, control.current_line);
     }
-
     0
+}
+
+#[allow(dead_code)]
+fn main() { os::set_exit_status(uumain(os::args())); }
+
+pub fn uumain(args: Vec<String>) -> int {
+    let opts = [
+        getopts::optopt("a", "suffix-length", "use suffixes of length N (default 2)", "N"),
+        getopts::optopt("b", "bytes", "put SIZE bytes per output file", "SIZE"),
+        getopts::optopt("C", "line-bytes", "put at most SIZE bytes of lines per output file", "SIZE"),
+        getopts::optflag("d", "numeric-suffixes", "use numeric suffixes instead of alphabetic"),
+        getopts::optopt("l", "lines", "put NUMBER lines per output file", "NUMBER"),
+        getopts::optflag("", "verbose", "print a diagnostic just before each output file is opened"),
+        getopts::optflag("h", "help", "display help and exit"),
+        getopts::optflag("V", "version", "output version information and exit"),
+    ];
+
+    let matches = match getopts::getopts(args.tail(), opts) {
+        Ok(m) => m,
+        Err(f) => crash!(1, "{}", f)
+    };
+
+    if matches.opt_present("h") {
+        println!("{} v{}", NAME, VERSION);
+        println!("");
+        println!("Usage:");
+        println!("  {0:s} [OPTION]... [INPUT [PREFIX]]", NAME);
+        println!("");
+        print(getopts::usage("Output fixed-size pieces of INPUT to PREFIXaa, PREFIX ab, ...; default size is 1000, and default PREFIX is 'x'. With no INPUT, or when INPUT is -, read standard input." , opts).as_slice());
+        return 0;
+    }
+
+    if matches.opt_present("V") {
+        println!("{} v{}", NAME, VERSION);
+        return 0;
+    }
+    
+    let mut settings = Settings {
+        prefix: "".to_string(),
+        numeric_suffix: false,
+        suffix_length: 0,
+        input: "".to_string(),
+        strategy: "".to_string(),
+        strategy_param: "".to_string(),
+        verbose: false,
+    };
+
+    settings.numeric_suffix = if matches.opt_present("d") { true } else { false };
+
+    settings.suffix_length = match matches.opt_str("a") {
+        Some(n) => match from_str(n.as_slice()) {
+            Some(m) => m,
+            None => crash!(1, "cannot parse num")
+        },
+        None => 2
+    };
+
+    settings.verbose = if matches.opt_present("verbose") { true } else { false };
+
+    settings.strategy = "l".to_string();
+    settings.strategy_param = "1000".to_string();
+    let strategies = vec!["b", "C", "l"];
+    for e in strategies.iter() {
+        match matches.opt_str(*e) {
+            Some(a) => {
+                if settings.strategy.as_slice() == "l" {
+                    settings.strategy = e.to_string();
+                    settings.strategy_param = a;
+                } else {
+                    println!("{}", *e);
+                    crash!(1, "{}: cannot split in more than one way", NAME)
+                }
+            },
+            None => {}
+        }
+    }
+
+    let mut v = matches.free.iter();
+    let (input, prefix) = match (v.next(), v.next()) {
+        (Some(a), None) => (a.to_string(), "x".to_string()),
+        (Some(a), Some(b)) => (a.to_string(), b.to_string()),
+        (None, _) => ("-".to_string(), "x".to_string()),
+    };
+    settings.input = input;
+    settings.prefix = prefix;
+
+    split(&settings)
 }
