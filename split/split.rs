@@ -41,7 +41,6 @@ struct SplitControl {
     request_new_file: bool, // Splitter implementation requests new file
 }
 
-// TODO ByteSplitter(-b), LineByteSplitter(-C)
 trait Splitter {
     fn new(_hint: Option<Self>, &Settings) -> Box<Splitter>;
 
@@ -67,11 +66,10 @@ impl Splitter for LineSplitter {
     }
 
     fn consume(&mut self, control: &mut SplitControl) -> String {
-        println!("{}", self.lines_to_write);
         self.lines_to_write -= 1;
         if self.lines_to_write == 0 {
-            control.request_new_file = true;
             self.lines_to_write = self.saved_lines_to_write;
+            control.request_new_file = true;
         }
         control.current_line.clone()
     }
@@ -95,7 +93,14 @@ impl Splitter for ByteSplitter {
     }
 
     fn consume(&mut self, control: &mut SplitControl) -> String {
-        "".to_string()
+        let line = control.current_line.clone();
+        let n = std::cmp::min(line.as_slice().char_len(), self.bytes_to_write);
+        self.bytes_to_write -= n;
+        if n == 0 {
+            self.bytes_to_write = self.saved_bytes_to_write;
+            control.request_new_file = true;
+        }
+        line.as_slice().slice(0, n).to_string()
     }
 }
 
