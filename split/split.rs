@@ -210,8 +210,6 @@ pub fn uumain(args: Vec<String>) -> int {
         }
     );
 
-    // let num_lines;
-
     let mut splitter:LineSplitter = Splitter::new(&settings); 
     let mut control = SplitControl {
         current_line: "".to_string(),
@@ -238,7 +236,7 @@ pub fn uumain(args: Vec<String>) -> int {
             }.as_slice());
 
             if fileno != 0 {
-                writer.flush(); // TODO Use return value
+                crash_if_err!(1, writer.flush());
             }
             fileno += 1;
             writer = BufferedWriter::new(box io::File::open_mode(&Path::new(filename.as_slice()), io::Open, io::Write) as Box<Writer>);
@@ -246,7 +244,7 @@ pub fn uumain(args: Vec<String>) -> int {
         }
 
         let consumed = splitter.consume(&mut control);
-        writer.write_str(consumed.as_slice()); // TODO Use return value
+        crash_if_err!(1, writer.write_str(consumed.as_slice()));
         
         let advance = consumed.as_slice().char_len();
         let clone = control.current_line.clone();
