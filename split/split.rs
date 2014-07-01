@@ -43,7 +43,7 @@ struct SplitControl {
 
 // TODO ByteSplitter(-b), LineByteSplitter(-C)
 trait Splitter {
-    fn new(&Settings) -> Self;
+    fn new(_hint: Option<Self>, &Settings) -> Box<Splitter>;
 
     // Consume the current_line and return the consumed string
     fn consume(&mut self, &mut SplitControl) -> String;
@@ -55,15 +55,15 @@ struct LineSplitter {
 }
 
 impl Splitter for LineSplitter {
-    fn new(settings: &Settings) -> LineSplitter {
+    fn new(_: Option<LineSplitter>, settings: &Settings) -> Box<Splitter> {
         let n = match from_str(settings.strategy_param.as_slice()) {
             Some(a) => a,
             _ => crash!(1, "invalid number of lines")
         };
-        LineSplitter {
+        box LineSplitter {
             saved_lines_to_write: n,
             lines_to_write: n,
-        }
+        } as Box<Splitter>
     }
 
     fn consume(&mut self, control: &mut SplitControl) -> String {
@@ -121,7 +121,13 @@ fn split(settings: &Settings) -> int {
         }
     );
 
-    let mut splitter:LineSplitter = Splitter::new(settings); 
+    // Factory pattern
+    let mut splitter: Box<Splitter> =
+        match settings.strategy.as_slice() {
+            "l" => Splitter::new(None::<LineSplitter>, settings),
+            _ => Splitter::new(None::<LineSplitter>, settings)
+        };
+
     let mut control = SplitControl {
         current_line: "".to_string(),
         request_new_file: true,
