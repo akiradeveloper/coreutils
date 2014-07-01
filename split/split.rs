@@ -77,6 +77,28 @@ impl Splitter for LineSplitter {
     }
 }
 
+struct ByteSplitter {
+    saved_bytes_to_write: uint,
+    bytes_to_write: uint,
+}
+
+impl Splitter for ByteSplitter {
+    fn new(_: Option<ByteSplitter>, settings: &Settings) -> Box<Splitter> {
+        let n = match from_str(settings.strategy_param.as_slice()) {
+            Some(a) => a,
+            _ => crash!(1, "invalid number of lines")
+        };
+        box ByteSplitter {
+            saved_bytes_to_write: n,
+            bytes_to_write: n,
+        } as Box<Splitter>
+    }
+
+    fn consume(&mut self, control: &mut SplitControl) -> String {
+        "".to_string()
+    }
+}
+
 // (1, 3) -> "aab"
 fn str_prefix(i: uint, width: uint) -> String {
     let mut c = "".to_string();
@@ -125,7 +147,8 @@ fn split(settings: &Settings) -> int {
     let mut splitter: Box<Splitter> =
         match settings.strategy.as_slice() {
             "l" => Splitter::new(None::<LineSplitter>, settings),
-            _ => Splitter::new(None::<LineSplitter>, settings)
+            "b" => Splitter::new(None::<ByteSplitter>, settings),
+            a @ _ => crash!(1, "strategy {} not supported", a)
         };
 
     let mut control = SplitControl {
