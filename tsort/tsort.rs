@@ -32,6 +32,7 @@ pub fn uumain(args: Vec<String>) -> int {
 	let opts = [
 		getopts::optflag("d", "debug", "print out information as the sort happens"),
 		getopts::optflag("h", "help", "display this help and exit"),
+        getopts::optflag("V", "version", "output version information and exit"),
 	];
 
     let matches = match getopts::getopts(args.tail(), opts) {
@@ -42,9 +43,14 @@ pub fn uumain(args: Vec<String>) -> int {
         }
     };
 
-    if matches.opt_present("help") {
+    if matches.opt_present("h") {
     	usage(prog_name, opts);
     	return 0;
+    }
+
+    if matches.opt_present("V") {
+        println!("{} v{}", NAME, VERSION);
+        return 0;
     }
 
     let mut files = matches.free.clone();
@@ -60,12 +66,10 @@ pub fn uumain(args: Vec<String>) -> int {
         Err(_) => { return 1; }
     };
 
-
 	return 0
 }
 
-// Print out the program usage
-fn usage(prog_name: String, opts: [getopts::OptGroup, ..2]) {
+fn usage(prog_name: String, opts: [getopts::OptGroup, ..3]) {
     println!("Usage:");
 	println!("	{} [OPTIONS] FILE", prog_name);
 	print!("Topological sort the strings in FILE. ");
