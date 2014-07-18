@@ -1,9 +1,10 @@
-#![crate_id(name="tsort", vers="1.0.0", author="Ben Eggers")]
+#![crate_name = "tsort"]
 
 /*
  * This file is part of the uutils coreutils package.
  *
  * (c) Ben Eggers <ben.eggers36@gmail.com>
+ * (c) Akira Hayakawa <ruby.wktk@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,14 +16,18 @@ extern crate getopts;
 extern crate libc;
 
 use std::os;
+use std::io;
 
 use std::io::{print, stdin, File, BufferedReader};
 use StdResult = std::result::Result;
 
-#[allow(dead_code)]
-fn main() { os::set_exit_status(uumain(os::args())); }
+#[path = "../common/util.rs"]
+mod util;
 
-fn uumain(args: Vec<String>) -> int {
+static NAME: &'static str = "tsort";
+static VERSION: &'static str = "1.0.0";
+
+pub fn uumain(args: Vec<String>) -> int {
 	let prog_name = args.get(0).clone();
 	let opts = [
 		getopts::optflag("d", "debug", "print out information as the sort happens"),
@@ -71,8 +76,8 @@ fn usage(prog_name: String, opts: [getopts::OptGroup, ..2]) {
 }
 
 fn open(path: String) -> StdResult<BufferedReader<Box<Reader>>, int> {
-    if  path.as_slice == "-" {
-        let reader = box stdin() as Box<Reader>;
+    if  path.as_slice() == "-" {
+        let reader = box io::stdio::stdin_raw() as Box<Reader>;
         return Ok(BufferedReader::new(reader));
     }
 
