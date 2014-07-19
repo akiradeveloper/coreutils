@@ -93,14 +93,14 @@ pub fn uumain(args: Vec<String>) -> int {
 
 struct Edge {
     in_edges: HashSet<String>,
-    out_edges: HashSet<String>
+    out_edges: Vec<String>
 }
 
 impl Edge {
     fn new() -> Edge {
         Edge {
             in_edges: HashSet::new(),
-            out_edges: HashSet::new()
+            out_edges: vec!()
         }
     }
 }
@@ -126,16 +126,35 @@ impl Graph {
         if self.edges.contains_key(&to) {
             self.edges.insert(to.clone(), Edge::new());
         }
-
-        self.edges.get_mut(&from).out_edges.insert(to.clone());
-        self.edges.get_mut(&to).out_edges.insert(from.clone());
+        let included = self.edges.get(&to).in_edges.contains(&from);
+        if !included {
+            self.edges.get_mut(&from).out_edges.push(to.clone());
+            self.edges.get_mut(&to).in_edges.insert(from.clone());
+        }
     }
 
     fn run_tsort(&mut self) {
         let mut start_nodes = vec!();
         for (k, edge) in self.edges.iter() {
             if edge.in_edges.is_empty() {
-                start_nodes.push(k);
+                start_nodes.push(k.clone());
+            }
+        }
+        while !start_nodes.is_empty() {
+            let n = start_nodes[0].clone();
+            start_nodes.remove(0);
+
+            self.result.push(n.clone());
+
+            let ref mut out_edges = self.edges.get_mut(&n).out_edges;
+            while !out_edges.is_empty() {
+                let m = out_edges.get(0).clone();
+                out_edges.remove(0);
+                let ref mut in_edges = self.edges.get_mut(&m).in_edges;
+                in_edges.remove(&n);
+                if in_edges.is_empty() {
+                    start_nodes.push(m);
+                }
             }
         }
     }
