@@ -17,7 +17,6 @@ extern crate libc;
 
 use std::io;
 use std::collections::{HashSet, HashMap};
-use std::io::{print};
 
 #[path = "../common/util.rs"]
 mod util;
@@ -79,13 +78,14 @@ pub fn uumain(args: Vec<String>) -> int {
                 if ab.len() > 2 {
                     crash!(1, "{}: input contains an odd number of tokens", input);
                 }
-                g.add_edge(ab[0].to_string(), ab[1].to_string());
+                g.add_edge(&ab[0].to_string(), &ab[1].to_string());
             },
             _ => break
         }
     }
 
     g.run_tsort();
+
     if !g.is_acyclic() {
         crash!(1, "{}, input contains a loop:", input);
     }
@@ -101,7 +101,7 @@ pub fn uumain(args: Vec<String>) -> int {
 struct Graph {
     in_edges: HashMap<String, HashSet<String>>,
     out_edges: HashMap<String, Vec<String>>,
-    result: Vec<String> // Ordered
+    result: Vec<String>
 }
 
 // Kahn's algorithm
@@ -127,18 +127,18 @@ impl Graph {
         self.out_edges.insert(n.clone(), vec!());
     }
 
-    fn add_edge(&mut self, from: String,  to: String) {
-        if !self.has_node(&to) {
-            self.init_node(&to);
+    fn add_edge(&mut self, from: &String,  to: &String) {
+        if !self.has_node(to) {
+            self.init_node(to);
         }
 
-        if !self.has_node(&from) {
-            self.init_node(&from);
+        if !self.has_node(from) {
+            self.init_node(from);
         }
 
-        if !self.has_edge(&from, &to) {
-            self.in_edges.get_mut(&to).insert(from.clone());
-            self.out_edges.get_mut(&from).push(to.clone());
+        if !self.has_edge(from, to) {
+            self.in_edges.get_mut(to).insert(from.clone());
+            self.out_edges.get_mut(from).push(to.clone());
         }
     }
 
@@ -158,12 +158,14 @@ impl Graph {
 
             let n_out_edges = self.out_edges.get_mut(&n);
             while !n_out_edges.is_empty() {
-                let m = n_out_edges.get(0).clone();
+                // n -> m
+                let m = (*n_out_edges)[0].clone();
                 n_out_edges.remove(0);
 
                 let m_in_edges = self.in_edges.get_mut(&m);
                 m_in_edges.remove(&n);
 
+                // If m doesn't have other in-coming edges add it to start_nodes
                 if m_in_edges.is_empty() {
                     start_nodes.push(m);
                 }
