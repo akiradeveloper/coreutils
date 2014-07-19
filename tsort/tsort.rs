@@ -79,7 +79,14 @@ pub fn uumain(args: Vec<String>) -> int {
 
     let mut res = g.run_tsort();
 
+    if g.is_acyclic() {
+        crash!(1, "{}, input contains a loop:", input);
+    }
+
     let mut writer = io::BufferedWriter::new(box io::stdio::stdout_raw() as Box<Writer>);
+    for x in g.result.iter() {
+        crash_if_err!(1, writer.write_str(x.as_slice()));
+    }
 
 	return 0
 }
@@ -99,7 +106,6 @@ impl Edge {
 }
 
 struct Graph {
-    nodes: Vec<String>, // Ordered
     edges: HashMap<String, Edge>,
     result: Vec<String> // Ordered
 }
@@ -108,7 +114,6 @@ struct Graph {
 impl Graph {
     fn new() -> Graph {
         Graph {
-            nodes: vec!(),
             edges: HashMap::new(),
             result: vec!(),
         }
@@ -127,9 +132,20 @@ impl Graph {
     }
 
     fn run_tsort(&mut self) {
+        let mut start_nodes = vec!();
+        for (k, edge) in self.edges.iter() {
+            if edge.in_edges.is_empty() {
+                start_nodes.push(k);
+            }
+        }
     }
 
     fn is_acyclic(&self) -> bool {
-        false 
+        for edge in self.edges.values() {
+            if !edge.out_edges.is_empty() {
+                return true
+            }
+        }
+        false
     }
 }
