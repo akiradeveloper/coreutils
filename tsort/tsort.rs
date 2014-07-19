@@ -75,7 +75,7 @@ pub fn uumain(args: Vec<String>) -> int {
     loop {
         match reader.read_line() {
             Ok(line) => {
-                let ab: Vec<&str> = line.as_slice().split(' ').collect();
+                let ab: Vec<&str> = line.as_slice().trim_right_chars('\n').split(' ').collect();
                 if ab.len() > 2 {
                     crash!(1, "{}: input contains an odd number of tokens", input);
                 }
@@ -86,13 +86,13 @@ pub fn uumain(args: Vec<String>) -> int {
     }
 
     g.run_tsort();
-    if g.is_acyclic() {
+    if !g.is_acyclic() {
         crash!(1, "{}, input contains a loop:", input);
     }
 
     let mut writer = io::BufferedWriter::new(box io::stdio::stdout_raw() as Box<Writer>);
     for x in g.result.iter() {
-        crash_if_err!(1, writer.write_str(x.as_slice()));
+        crash_if_err!(1, writer.write_line(x.as_slice()));
     }
 
 	return 0
@@ -114,16 +114,26 @@ impl Graph {
         }
     }
 
+    fn has_node(&self, n: &String) -> bool {
+        self.in_edges.contains_key(n)
+    }
+
     fn has_edge(&self, from: &String, to: &String) -> bool {
         self.in_edges.get(to).contains(from)
     }
 
+    fn init_node(&mut self, n: &String) {
+        self.in_edges.insert(n.clone(), HashSet::new());
+        self.out_edges.insert(n.clone(), vec!());
+    }
+
     fn add_edge(&mut self, from: String,  to: String) {
-        if self.in_edges.contains_key(&to) {
-            self.in_edges.insert(to.clone(), HashSet::new());
+        if !self.has_node(&to) {
+            self.init_node(&to);
         }
-        if self.out_edges.contains_key(&from) {
-            self.out_edges.insert(from.clone(), vec!());
+
+        if !self.has_node(&from) {
+            self.init_node(&from);
         }
 
         if !self.has_edge(&from, &to) {
@@ -139,6 +149,7 @@ impl Graph {
                 start_nodes.push(n.clone());
             }
         }
+
         while !start_nodes.is_empty() {
             let n = start_nodes[0].clone();
             start_nodes.remove(0);
@@ -161,11 +172,11 @@ impl Graph {
     }
 
     fn is_acyclic(&self) -> bool {
-        for edge in self.out_edges.values() {
-            if !edge.is_empty() {
-                return true
+        for edges in self.out_edges.values() {
+            if !edges.is_empty() {
+                return false
             }
         }
-        false
+        true
     }
 }
