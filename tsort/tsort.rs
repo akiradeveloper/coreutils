@@ -15,7 +15,6 @@
 extern crate getopts;
 extern crate libc;
 
-use std::os;
 use std::io;
 use std::collections::{HashSet, HashMap};
 use std::io::{print};
@@ -27,7 +26,6 @@ static NAME: &'static str = "tsort";
 static VERSION: &'static str = "1.0.0";
 
 pub fn uumain(args: Vec<String>) -> int {
-	let prog_name = args.get(0).clone();
 	let opts = [
 		getopts::optflag("h", "help", "display this help and exit"),
         getopts::optflag("V", "version", "output version information and exit"),
@@ -53,10 +51,10 @@ pub fn uumain(args: Vec<String>) -> int {
         return 0;
     }
 
-    let mut files = matches.free.clone();
+    let files = matches.free.clone();
     let input = if files.len() > 1 {
         crash!(1, "{}, extra operand '{}'", NAME, matches.free[1]);
-    } else if (files.is_empty()) {
+    } else if files.is_empty() {
         "-".to_string()
     } else {
         files[0].to_string()
@@ -74,11 +72,20 @@ pub fn uumain(args: Vec<String>) -> int {
     );
 
     let mut g = Graph::new();
+    loop {
+        match reader.read_line() {
+            Ok(line) => {
+                let ab: Vec<&str> = line.as_slice().split(' ').collect();
+                if ab.len() > 2 {
+                    crash!(1, "{}: input contains an odd number of tokens", input);
+                }
+                g.add_edge(ab[0].to_string(), ab[1].to_string());
+            },
+            _ => break
+        }
+    }
 
-    // TODO init g
-
-    let mut res = g.run_tsort();
-
+    g.run_tsort();
     if g.is_acyclic() {
         crash!(1, "{}, input contains a loop:", input);
     }
@@ -91,22 +98,9 @@ pub fn uumain(args: Vec<String>) -> int {
 	return 0
 }
 
-struct Edge {
-    in_edges: HashSet<String>,
-    out_edges: Vec<String>
-}
-
-impl Edge {
-    fn new() -> Edge {
-        Edge {
-            in_edges: HashSet::new(),
-            out_edges: vec!()
-        }
-    }
-}
-
 struct Graph {
-    edges: HashMap<String, Edge>,
+    in_edges: HashMap<String, HashSet<String>>,
+    out_edges: HashMap<String, Vec<String>>,
     result: Vec<String> // Ordered
 }
 
@@ -114,30 +108,35 @@ struct Graph {
 impl Graph {
     fn new() -> Graph {
         Graph {
-            edges: HashMap::new(),
+            in_edges: HashMap::new(),
+            out_edges: HashMap::new(),
             result: vec!(),
         }
     }
 
+    fn has_edge(&self, from: &String, to: &String) -> bool {
+        self.in_edges.get(to).contains(from)
+    }
+
     fn add_edge(&mut self, from: String,  to: String) {
-        if self.edges.contains_key(&from) {
-            self.edges.insert(from.clone(), Edge::new());
+        if self.in_edges.contains_key(&to) {
+            self.in_edges.insert(to.clone(), HashSet::new());
         }
-        if self.edges.contains_key(&to) {
-            self.edges.insert(to.clone(), Edge::new());
+        if self.out_edges.contains_key(&from) {
+            self.out_edges.insert(from.clone(), vec!());
         }
-        let included = self.edges.get(&to).in_edges.contains(&from);
-        if !included {
-            self.edges.get_mut(&from).out_edges.push(to.clone());
-            self.edges.get_mut(&to).in_edges.insert(from.clone());
+
+        if !self.has_edge(&from, &to) {
+            self.in_edges.get_mut(&to).insert(from.clone());
+            self.out_edges.get_mut(&from).push(to.clone());
         }
     }
 
     fn run_tsort(&mut self) {
         let mut start_nodes = vec!();
-        for (k, edge) in self.edges.iter() {
-            if edge.in_edges.is_empty() {
-                start_nodes.push(k.clone());
+        for (n, edges) in self.in_edges.iter() {
+            if edges.is_empty() {
+                start_nodes.push(n.clone());
             }
         }
         while !start_nodes.is_empty() {
@@ -146,13 +145,15 @@ impl Graph {
 
             self.result.push(n.clone());
 
-            let ref mut out_edges = self.edges.get_mut(&n).out_edges;
-            while !out_edges.is_empty() {
-                let m = out_edges.get(0).clone();
-                out_edges.remove(0);
-                let ref mut in_edges = self.edges.get_mut(&m).in_edges;
-                in_edges.remove(&n);
-                if in_edges.is_empty() {
+            let n_out_edges = self.out_edges.get_mut(&n);
+            while !n_out_edges.is_empty() {
+                let m = n_out_edges.get(0).clone();
+                n_out_edges.remove(0);
+
+                let m_in_edges = self.in_edges.get_mut(&m);
+                m_in_edges.remove(&n);
+
+                if m_in_edges.is_empty() {
                     start_nodes.push(m);
                 }
             }
@@ -160,8 +161,8 @@ impl Graph {
     }
 
     fn is_acyclic(&self) -> bool {
-        for edge in self.edges.values() {
-            if !edge.out_edges.is_empty() {
+        for edge in self.out_edges.values() {
+            if !edge.is_empty() {
                 return true
             }
         }
