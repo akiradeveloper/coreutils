@@ -17,9 +17,8 @@ extern crate libc;
 
 use std::os;
 use std::io;
-
+use std::collections::{HashMap};
 use std::io::{print};
-use StdResult = std::result::Result;
 
 #[path = "../common/util.rs"]
 mod util;
@@ -27,45 +26,25 @@ mod util;
 static NAME: &'static str = "tsort";
 static VERSION: &'static str = "1.0.0";
 
-struct G {
-    nodes: ,
-    in_edges: ,
-    out_edges: ,
-}
-
-impl G {
-    fn new() -> Edges {
-    }
-
-    fn add_edge(from: String,  to: String) {
-    }
-
-    fn run() -> list {
-    }
-
-    fn is_acyclic() -> bool {
-    
-    }
-}
-
 pub fn uumain(args: Vec<String>) -> int {
 	let prog_name = args.get(0).clone();
 	let opts = [
-		getopts::optflag("d", "debug", "print out information as the sort happens"), // FIXME remove
 		getopts::optflag("h", "help", "display this help and exit"),
         getopts::optflag("V", "version", "output version information and exit"),
 	];
 
     let matches = match getopts::getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(_) => {
-            usage(prog_name, opts);
-            return 1; // FIXME crash
-        }
+        Err(_) => crash!(1, "")
     };
 
     if matches.opt_present("h") {
-    	usage(prog_name, opts);
+        println!("{} v{}", NAME, VERSION);
+        println!("");
+        println!("Usage:");
+        println!("	{} [OPTIONS] FILE", NAME);
+        println!("");
+        io::print(getopts::usage("Topological sort the strings in FILE. Strings are defined as any sequence of tokens separated by whitespace (tab, space, or newline). If FILE is not passed in, stdin is used instead.", opts).as_slice());
     	return 0;
     }
 
@@ -75,54 +54,64 @@ pub fn uumain(args: Vec<String>) -> int {
     }
 
     let mut files = matches.free.clone();
-    if files.is_empty() {
-        files = vec!("-".to_string());
-    } else if files.len() > 1 {
-    	println!("{}: extra operand '{}'", prog_name, files.get(1)); // FIXME
-    	return 1;
-    }
-
-    let mut reader = match open(files.get(0).to_string()) { // FIXME use [i] operator
-        Ok(f) => f,
-        Err(_) => { return 1; } // FIXME
+    let input = if files.len() > 1 {
+        crash!(1, "{}, extra operand '{}'", NAME, matches.free[1]);
+    } else if (files.is_empty()) {
+        "-".to_string()
+    } else {
+        files[0].to_string()
     };
 
-    let mut g = G::new();
+    let mut reader = io::BufferedReader::new(
+        if input.as_slice() == "-" {
+            box io::stdio::stdin_raw() as Box<Reader>
+        } else {
+            box match io::File::open(&Path::new(input.clone())) {
+                Ok(a) => a,
+                Err(_) => crash!(1, "{}: No such file or directory", input)
+            } as Box<Reader>
+        }
+    );
+
+    let mut g = Graph::new();
 
     // TODO init g
 
-    let mut res = g.run();
+    let mut res = g.run_tsort();
 
     let mut writer = io::BufferedWriter::new(box io::stdio::stdout_raw() as Box<Writer>);
 
 	return 0
 }
 
-// FIXME remove
-fn usage(prog_name: String, opts: [getopts::OptGroup, ..3]) {
-    println!("Usage:");
-	println!("	{} [OPTIONS] FILE", prog_name);
-	print!("Topological sort the strings in FILE. "); // FIXME oneline. don't split
-	print!("Strings are defined as any sequence of tokens separated by whitespace ");
-	print!("(tab, space, or newline). If FILE is not passed in, stdin is used instead.");
-	print(getopts::usage("", opts).as_slice());
-	println!("");
+struct Edge {
+    in_edges: Vec<String>,
+    out_ednges: Vec<String>
 }
 
-// FIXME remove. expand
-// FIXME more specific name
-fn open(path: String) -> StdResult<io::BufferedReader<Box<Reader>>, int> {
-    if  path.as_slice() == "-" {
-        let reader = box io::stdio::stdin_raw() as Box<Reader>;
-        return Ok(io::BufferedReader::new(reader));
-    }
-    match io::File::open(&std::path::Path::new(path.as_slice())) {
-        Ok(fd) => {
-            let reader = box fd as Box<Reader>;
-            Ok(io::BufferedReader::new(reader))
-        },
-        Err(_) => { // FIXME crash
-            Err(1)
+struct Graph {
+    nodes: Vec<String>, // Ordered
+    edges: HashMap<String, Edge>,
+    result: Vec<String>
+}
+
+// Kahn's algorithm
+impl Graph {
+    fn new() -> Graph {
+        Graph {
+            nodes: vec!(),
+            edges: HashMap::new(),
+            result: vec!(),
         }
+    }
+
+    fn add_edge(&mut self, from: String,  to: String) {
+    }
+
+    fn run_tsort(&mut self) {
+    }
+
+    fn is_acyclic(&self) -> bool {
+        false 
     }
 }
