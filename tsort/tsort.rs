@@ -17,7 +17,7 @@ extern crate libc;
 
 use std::os;
 use std::io;
-use std::collections::{HashMap};
+use std::collections::{HashSet, HashMap};
 use std::io::{print};
 
 #[path = "../common/util.rs"]
@@ -35,7 +35,7 @@ pub fn uumain(args: Vec<String>) -> int {
 
     let matches = match getopts::getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(_) => crash!(1, "")
+        Err(f) => crash!(1, "{}", f)
     };
 
     if matches.opt_present("h") {
@@ -68,7 +68,7 @@ pub fn uumain(args: Vec<String>) -> int {
         } else {
             box match io::File::open(&Path::new(input.clone())) {
                 Ok(a) => a,
-                Err(_) => crash!(1, "{}: No such file or directory", input)
+                _ => crash!(1, "{}: No such file or directory", input)
             } as Box<Reader>
         }
     );
@@ -85,14 +85,23 @@ pub fn uumain(args: Vec<String>) -> int {
 }
 
 struct Edge {
-    in_edges: Vec<String>,
-    out_ednges: Vec<String>
+    in_edges: HashSet<String>,
+    out_edges: HashSet<String>
+}
+
+impl Edge {
+    fn new() -> Edge {
+        Edge {
+            in_edges: HashSet::new(),
+            out_edges: HashSet::new()
+        }
+    }
 }
 
 struct Graph {
     nodes: Vec<String>, // Ordered
     edges: HashMap<String, Edge>,
-    result: Vec<String>
+    result: Vec<String> // Ordered
 }
 
 // Kahn's algorithm
@@ -106,6 +115,15 @@ impl Graph {
     }
 
     fn add_edge(&mut self, from: String,  to: String) {
+        if self.edges.contains_key(&from) {
+            self.edges.insert(from.clone(), Edge::new());
+        }
+        if self.edges.contains_key(&to) {
+            self.edges.insert(to.clone(), Edge::new());
+        }
+
+        self.edges.get_mut(&from).out_edges.insert(to.clone());
+        self.edges.get_mut(&to).out_edges.insert(from.clone());
     }
 
     fn run_tsort(&mut self) {
